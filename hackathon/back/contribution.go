@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/joho/godotenv"
 	"github.com/oklog/ulid"
 	"log"
 	"math/rand"
@@ -48,12 +47,12 @@ type ContReqForHTTPUPDATE struct {
 
 func init() {
 
-	err := godotenv.Load(".env_mysql")
-
-	// もし err がnilではないなら、"読み込み出来ませんでした"が出力されます。
-	if err != nil {
-		fmt.Printf("読み込み出来ませんでした: %v", err)
-	}
+	//err := godotenv.Load(".env_mysql")
+	//
+	//// もし err がnilではないなら、"読み込み出来ませんでした"が出力されます。
+	//if err != nil {
+	//	fmt.Printf("読み込み出来ませんでした: %v", err)
+	//}
 
 	mysqlUser := os.Getenv("MYSQL_USER")
 	mysqlPwd := os.Getenv("MYSQL_PWD")
