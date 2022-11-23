@@ -12,4 +12,4 @@ COPY ./ .
 
 
 
-CMD["go","run","."]
+CMD["go run ./app"]
