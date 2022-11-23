@@ -11,5 +11,4 @@ RUN go mod download
 COPY ./ .
 
 
-
-CMD["go run ./app"]
+CMD ["go", "run", "/app/*.go"]
