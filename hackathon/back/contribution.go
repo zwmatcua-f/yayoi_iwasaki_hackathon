@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 	"github.com/oklog/ulid"
 	"log"
 	"math/rand"
@@ -37,38 +38,33 @@ type ContReqForHTTPDELETE struct {
 }
 
 type ContReqForHTTPUPDATE struct {
-	UpdateId    string `json:"update_id"`
-	NewReceiver string `json:"new_receiver"`
-	NewMessage  string `json:"new_message"`
-	NewPoint    int    `json:"new_point"`
+	UpdateId   string `json:"update_id"`
+	NewMessage string `json:"new_message"`
 }
 
 // ① GoプログラムからMySQLへ接続
 
 func init() {
 
-	//err := godotenv.Load(".env_mysql")
-	//
-	//// もし err がnilではないなら、"読み込み出来ませんでした"が出力されます。
-	//if err != nil {
-	//	fmt.Printf("読み込み出来ませんでした: %v", err)
-	//}
+	err := godotenv.Load(".env_mysql")
+
+	// もし err がnilではないなら、"読み込み出来ませんでした"が出力されます。
+	if err != nil {
+		fmt.Printf("読み込み出来ませんでした: %v", err)
+	}
 
 	mysqlUser := os.Getenv("MYSQL_USER")
-	mysqlPwd := os.Getenv("MYSQL_PWD")
-	mysqlHost := os.Getenv("MYSQL_HOST")
+	mysqlUserPwd := os.Getenv("MYSQL_PASSWORD")
 	mysqlDatabase := os.Getenv("MYSQL_DATABASE")
 
-	connStr := fmt.Sprintf("%s:%s@%s/%s", mysqlUser, mysqlPwd, mysqlHost, mysqlDatabase)
-	_db, err := sql.Open("mysql", connStr)
 	// ①-2
-	//_db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@(localhost:3306)/%s", mysqlUser, mysqlUserPwd, mysqlDatabase))
+	_db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@(localhost:3306)/%s", mysqlUser, mysqlUserPwd, mysqlDatabase))
 	if err != nil {
 		log.Fatalf("fail: sql.Open, %v\n", err)
 	}
 	//// ①-3
 	if err := _db.Ping(); err != nil {
-		log.Println(mysqlUser, mysqlPwd, mysqlDatabase)
+		log.Println(mysqlUser, mysqlUserPwd, mysqlDatabase)
 		log.Fatalf("fail: _db.Ping, %v\n", err)
 	}
 	db = _db
@@ -78,6 +74,10 @@ func handlerTimeline(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", "*")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
 	switch r.Method {
 	case http.MethodGet:
@@ -251,7 +251,7 @@ func handlerTimeline(w http.ResponseWriter, r *http.Request) {
 		}
 
 		stmt, err := db.Prepare(
-			"UPDATE contribution SET RECEIVER=?, MESSAGE=?, POINT=? WHERE CONTRIBUTION_ID=?")
+			"UPDATE contribution SET MESSAGE=? WHERE CONTRIBUTION_ID=?")
 		if err != nil {
 			err := tx.Rollback()
 			fmt.Printf("prepare_fail")
@@ -265,7 +265,7 @@ func handlerTimeline(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Printf("d is %#v\n", d)
 
-		_, err = stmt.Exec(d.NewReceiver, d.NewMessage, d.NewPoint, d.UpdateId)
+		_, err = stmt.Exec(d.NewMessage, d.UpdateId)
 		if err != nil {
 			log.Printf("fail: , %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
